@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>梦境日记 · AI Dream Journal</title>
+<style>
+  :root {
+    --bg: #0d0b1e;
+    --card: #1a1633;
+    --card2: #221c44;
+    --purple: #8b5cf6;
+    --pink: #ec4899;
+    --gold: #fbbf24;
+    --text: #e9e4ff;
+    --muted: #9d94c9;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .star { position: absolute; background: #fff; border-radius: 50%; opacity: .6; animation: twinkle 3s infinite ease-in-out; }
+  @keyframes twinkle { 0%,100% { opacity: .15; } 50% { opacity: .8; } }
+
+  .wrap { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 40px 20px 120px; }
+
+  header { text-align: center; margin-bottom: 36px; }
+  .logo { font-size: 44px; }
+  h1 {
+    font-size: 34px; letter-spacing: 4px; margin: 8px 0 6px;
+    background: linear-gradient(120deg, #c4b5fd, #f9a8d4, #fde68a);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .subtitle { color: var(--muted); font-size: 14px; letter-spacing: 1px; }
+
+  .quota-bar { display: flex; justify-content: center; gap: 10px; margin-top: 16px; font-size: 13px; color: var(--muted); }
+  .quota-pill {
+    background: var(--card); border: 1px solid #3b2f6b; border-radius: 999px;
+    padding: 6px 16px; cursor: pointer; transition: .2s;
+  }
+  .quota-pill:hover { border-color: var(--purple); color: var(--text); }
+  .quota-pill b { color: var(--gold); }
+
+  .input-card {
+    background: var(--card); border: 1px solid #322a5e; border-radius: 20px;
+    padding: 26px; margin-bottom: 40px; box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+  .input-card h2 { font-size: 18px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  textarea {
+    width: 100%; min-height: 110px; resize: vertical;
+    background: #120e26; color: var(--text); border: 1px solid #3b2f6b;
+    border-radius: 12px; padding: 14px 16px; font-size: 15px; line-height: 1.7;
+    outline: none; transition: .2s;
+  }
+  textarea:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(139,92,246,.15); }
+  .btn-row { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  button {
+    border: none; cursor: pointer; font-size: 15px; border-radius: 12px;
+    padding: 12px 24px; transition: transform .15s, box-shadow .15s; font-family: inherit;
+  }
+  button:active { transform: scale(.96); }
+  .btn-primary {
+    background: linear-gradient(120deg, var(--purple), var(--pink));
+    color: #fff; font-weight: 600; box-shadow: 0 8px 24px rgba(139,92,246,.35);
+  }
+  .btn-primary:hover { box-shadow: 0 10px 32px rgba(236,72,153,.45); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid #3b2f6b; }
+  .btn-ghost:hover { color: var(--text); border-color: var(--purple); }
+  .btn-ghost.recording { color: #f87171; border-color: #f87171; animation: pulse 1.2s infinite; }
+  @keyframes pulse { 50% { opacity: .5; } }
+
+  .result { display: none; margin-bottom: 48px; }
+  .result.show { display: block; animation: fadeUp .6s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } }
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 640px) { .result-grid { grid-template-columns: 1fr; } }
+  .dream-frame {
+    border-radius: 18px; overflow: hidden; border: 1px solid #3b2f6b;
+    box-shadow: 0 16px 48px rgba(0,0,0,.5); position: relative;
+  }
+  .dream-frame svg, .dream-frame img { display: block; width: 100%; height: auto; }
+  .dream-title {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 28px 18px 14px;
+    background: linear-gradient(transparent, rgba(10,8,25,.85));
+    font-size: 18px; font-weight: 600; letter-spacing: 1px;
+  }
+  .reading {
+    background: var(--card); border: 1px solid #322a5e; border-radius: 18px; padding: 22px;
+    font-size: 14.5px; line-height: 2; color: #d8d0f5;
+  }
+  .reading h3 { color: var(--gold); font-size: 15px; margin-bottom: 10px; letter-spacing: 2px; }
+  .disclaimer {
+    margin-top: 14px; font-size: 12px; color: var(--muted);
+    border-top: 1px dashed #3b2f6b; padding-top: 12px;
+  }
+
+  .gallery h2 { font-size: 20px; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+  .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+  .g-card {
+    background: var(--card2); border: 1px solid #322a5e; border-radius: 14px;
+    overflow: hidden; cursor: pointer; transition: transform .2s, box-shadow .2s; position: relative;
+  }
+  .g-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(139,92,246,.25); }
+  .g-card img { width: 100%; display: block; }
+  .g-card .g-body { padding: 10px 12px; }
+  .g-card .g-title { font-size: 13.5px; font-weight: 600; }
+  .g-card .g-date { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+  .g-del {
+    position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(0,0,0,.55); color: #fda4af; font-size: 14px; line-height: 26px;
+    text-align: center; padding: 0; display: none;
+  }
+  .g-card:hover .g-del { display: block; }
+  .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 40px 0; grid-column: 1/-1; }
+
+  .modal-mask {
+    position: fixed; inset: 0; background: rgba(5,4,15,.75); z-index: 50;
+    display: none; align-items: center; justify-content: center; padding: 24px;
+  }
+  .modal-mask.show { display: flex; }
+  .modal {
+    background: var(--card); border: 1px solid #3b2f6b; border-radius: 20px;
+    max-width: 420px; width: 100%; padding: 30px; text-align: center;
+    animation: fadeUp .35s ease;
+  }
+  .modal h3 { margin-bottom: 12px; font-size: 20px; }
+  .modal p { color: var(--muted); font-size: 14px; line-height: 1.9; margin-bottom: 22px; }
+  footer { text-align: center; color: #5d548c; font-size: 12px; margin-top: 60px; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+
+<div class="wrap">
+  <header>
+    <div class="logo">🌙</div>
+    <h1>梦境日记</h1>
+    <div class="subtitle">说出你的梦 · 生成超现实图景与解读 · 积累专属梦境图鉴</div>
+    <div class="quota-bar">
+      <span class="quota-pill" id="quotaPill" title="点击了解订阅">今晚剩余额度：<b id="quotaNum">3</b> 次</span>
+    </div>
+  </header>
+
+  <div class="input-card">
+    <h2>✍️ 记录昨晚的梦</h2>
+    <textarea id="dreamInput" placeholder="例如：我梦见自己在一片紫色的海里游泳，天上挂着三个月亮，还有鲸鱼在云朵之间游来游去……"></textarea>
+    <div class="btn-row">
+      <button class="btn-primary" id="genBtn">✨ 生成梦境图像与解读</button>
+      <button class="btn-ghost" id="voiceBtn">🎙️ 语音描述</button>
+      <button class="btn-ghost" id="randomBtn">🎲 没记住？随机一个梦</button>
+    </div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-grid">
+      <div class="dream-frame" id="dreamFrame"></div>
+      <div class="reading" id="reading"></div>
+    </div>
+  </div>
+
+  <div class="gallery">
+    <h2>📖 我的梦境图鉴 <span id="galleryCount" style="font-size:13px;color:var(--muted)"></span></h2>
+    <div class="gallery-grid" id="galleryGrid"></div>
+  </div>
+
+  <footer>梦境日记 · 解读仅供娱乐，不构成任何心理或医学建议 🌙</footer>
+</div>
+
+<div class="modal-mask" id="subModal">
+  <div class="modal">
+    <h3>🌌 今晚的额度用完了</h3>
+    <p>订阅「梦境无限版」¥12/月，不限次数生成，解锁高清梦境图与梦境连续性分析。<br><br><small>（Demo：点击下面按钮即可恢复 3 次额度）</small></p>
+    <button class="btn-primary" id="subBtn">✨ 立即订阅（演示）</button>
+    <button class="btn-ghost" style="margin-left:10px" id="subClose">再想想</button>
+  </div>
+</div>
+
+<script>
+function hashStr(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function mulberry32(a) {
+  return function() {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+const PALETTES = [
+  ["#2b1055", "#7597de", "#f0abfc", "#fde68a"],
+  ["#0f2027", "#203a43", "#2c5364", "#f6d365"],
+  ["#1a0533", "#7b2cbf", "#e0aaff", "#ff9e00"],
+  ["#000428", "#004e92", "#fbb034", "#fceabb"],
+  ["#20002c", "#cbb4d4", "#e8c547", "#f7f1e3"],
+];
+const SYMBOLS = ["🌙","👁️","🐋","🪐","🌊","🗝️","🪞","🕊️","🎈","⛰️","🌵","🌸","🔥","🫧","🌗","🚪"];
+
+function generateDreamImage(text, title) {
+  const rnd = mulberry32(hashStr(text));
+  const pal = PALETTES[Math.floor(rnd() * PALETTES.length)];
+  const W = 800, H = 1000;
+
+  let starsSvg = "";
+  for (let i = 0; i < 40; i++) {
+    const x = rnd() * W, y = rnd() * H, r = rnd() * 1.8 + 0.4, o = (rnd() * 0.7 + 0.2).toFixed(2);
+    starsSvg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="#fff" opacity="${o}"/>`;
+  }
+
+  let symbols = "";
+  const n = 6 + Math.floor(rnd() * 4);
+  for (let i = 0; i < n; i++) {
+    const s = SYMBOLS[Math.floor(rnd() * SYMBOLS.length)];
+    const x = rnd() * W, y = rnd() * H * 0.8, size = 40 + rnd() * 110;
+    const rot = (rnd() * 60 - 30).toFixed(0);
+    const o = (rnd() * 0.5 + 0.5).toFixed(2);
+    const blur = rnd() > 0.7 ? `filter="url(#soft)"` : "";
+    symbols += `<text x="${x.toFixed(0)}" y="${y.toFixed(0)}" font-size="${size.toFixed(0)}" opacity="${o}" ${blur} transform="rotate(${rot} ${x.toFixed(0)} ${y.toFixed(0)})">${s}</text>`;
+  }
+
+  const main = SYMBOLS[Math.floor(rnd() * SYMBOLS.length)];
+  const main2 = SYMBOLS[Math.floor(rnd() * SYMBOLS.length)];
+
+  const svg = `
+  <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${pal[0]}"/>
+        <stop offset="45%" stop-color="${pal[1]}"/>
+        <stop offset="75%" stop-color="${pal[2]}"/>
+        <stop offset="100%" stop-color="${pal[0]}"/>
+      </linearGradient>
+      <radialGradient id="glow" cx="50%" cy="40%" r="45%">
+        <stop offset="0%" stop-color="${pal[3]}" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="${pal[3]}" stop-opacity="0"/>
+      </radialGradient>
+      <filter id="soft"><feGaussianBlur stdDeviation="4"/></filter>
+      <filter id="grain">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/>
+        <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.06 0"/>
+      </filter>
+    </defs>
+    <rect width="${W}" height="${H}" fill="url(#bg)"/>
+    <rect width="${W}" height="${H}" fill="url(#glow)"/>
+    ${starsSvg}
+    <text x="${W/2}" y="${H*0.42}" font-size="240" text-anchor="middle" opacity="0.9" filter="url(#soft)">${main}</text>
+    <text x="${W/2 + (rnd()*160-80)}" y="${H*0.6 + (rnd()*120-60)}" font-size="120" text-anchor="middle" opacity="0.65">${main2}</text>
+    ${symbols}
+    <rect width="${W}" height="${H}" filter="url(#grain)"/>
+    <text x="${W/2}" y="${H - 40}" text-anchor="middle" font-size="22" fill="#ffffff" opacity="0.6" font-family="serif" letter-spacing="6">${title}</text>
+  </svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+
+const READING_RULES = [
+  { keys: ["水","海","河","雨","游","湖"], text: "水象征情绪与潜意识。梦中的水域暗示你近期的情感流动格外活跃，也许有未被表达的感受正在寻找出口。游泳的姿态说明你并没有抗拒它——这是很好的信号。" },
+  { keys: ["飞","飘","空中","翅膀","云"], text: "飞翔代表对自由的渴望，也可能暗示现实中某种「失控感」。飞得越高，越说明你在尝试摆脱地面上的束缚；如果梦中有坠落的前兆，留意最近是否给自己太大压力。" },
+  { keys: ["坠落","掉","悬崖","跌"], text: "坠落梦常与失控感和不安全感有关。它并不代表厄运，而是身体在提醒你：某些事情的掌控感正在松动，是时候重新审视让你焦虑的源头了。" },
+  { keys: ["追","跑","逃","躲"], text: "被追逐的梦是压力的经典投影。追逐你的「东西」往往是你不愿面对的问题本身。梦里你一直在跑，说明解决它的方式可能不是逃避，而是回头看一看。" },
+  { keys: ["火","烧","焰","烟"], text: "火象征强烈的情绪能量——可能是愤怒、激情，或迫切的改变欲。梦中的火焰若在可控范围内燃烧，预示一次有力的自我更新。" },
+  { keys: ["蛇","狗","猫","动物"], text: "动物在梦中常代表本能层面。它们的出现说明你的直觉系统正在试图与你对话，最近不妨多信任第一反应，而不是过度分析。" },
+  { keys: ["死","葬礼","告别"], text: "梦见死亡极少是坏事——它几乎总是「结束与新生」的隐喻。某个阶段、某段关系或某种旧习惯正在落幕，腾出空间给新的事物。" },
+  { keys: ["考试","迟到","上班","工作","上课"], text: "这是典型的焦虑梦。梦把日常的 KPI 和 deadline 搬进了睡眠，说明你的责任感超载了。也许该给自己安排一个真正的休息日。" },
+  { keys: ["恋","前任","吻","婚"], text: "关系主题的梦境反映的是你与「亲密」这个概念的当前状态，而不一定指向具体的人。它可能是在询问：你现在的情感需求被满足了吗？" },
+];
+const DEFAULT_READINGS = [
+  "这个梦的画面感很强，说明你的潜意识正在用象征的方式整理近期的经历。那些看似荒诞的元素，每一个都是你内心的信使。",
+  "梦的逻辑不受现实规则约束，这恰恰给了潜意识自由表达的空间。留意梦中让你印象最深的那个细节——它通常是整个梦的钥匙。",
+  "这是一个「叙事型」的梦，你的大脑正在睡梦中编织故事。它不一定在传递信息，也可能只是在进行一场私人的艺术创作。"
+];
+const LUCKY = ["幸运符号：🌙 月牙", "今日宜：把梦讲给一个人听", "潜意识指数：★★★★☆", "梦境能量色：#8B5CF6 星紫", "幸运时刻：睡前 23 点"];
+
+function generateReading(text) {
+  const parts = [];
+  for (const rule of READING_RULES) {
+    if (rule.keys.some(k => text.includes(k))) { parts.push(rule.text); break; }
+  }
+  if (parts.length === 0) parts.push(DEFAULT_READINGS[Math.floor(Math.random() * DEFAULT_READINGS.length)]);
+  const rnd = mulberry32(hashStr(text + "extra"));
+  parts.push("「星象备注」" + LUCKY[Math.floor(rnd() * LUCKY.length)]);
+  return parts;
+}
+
+function generateTitle(text) {
+  const pool = [["紫色","蓝色","金色","透明","倒悬","发光"],["海","城市","森林","宇宙","花园","车站"],["与鲸鱼","与月亮","与旧友","与陌生人","与飞鸟","与自己"],["漫游","对话","逃亡","共舞","坠落","重逢"]];
+  const rnd = mulberry32(hashStr(text + "title"));
+  return pool.map(arr => arr[Math.floor(rnd() * arr.length)]).join("");
+}
+
+let quota = parseInt(localStorage.getItem("dream_quota") ?? "3");
+function renderQuota() {
+  document.getElementById("quotaNum").textContent = quota;
+  localStorage.setItem("dream_quota", quota);
+}
+
+function loadGallery() { try { return JSON.parse(localStorage.getItem("dream_gallery") || "[]"); } catch { return []; } }
+function saveGallery(list) { localStorage.setItem("dream_gallery", JSON.stringify(list)); }
+
+function renderGallery() {
+  const list = loadGallery();
+  const grid = document.getElementById("galleryGrid");
+  document.getElementById("galleryCount").textContent = list.length ? `共 ${list.length} 场梦` : "";
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty">还没有梦境记录。<br>写下或说出你的第一个梦吧 🌙</div>`;
+    return;
+  }
+  grid.innerHTML = list.map(d => `
+    <div class="g-card" data-id="${d.id}" onclick="viewDream('${d.id}')">
+      <button class="g-del" onclick="event.stopPropagation();delDream('${d.id}')">✕</button>
+      <img src="${d.img}" alt="${d.title}">
+      <div class="g-body">
+        <div class="g-title">${d.title}</div>
+        <div class="g-date">${d.date}</div>
+      </div>
+    </div>`).reverse().join("");
+}
+
+function handleGenerate(rawText) {
+  const text = rawText.trim();
+  if (!text) { alert("先描述一下你的梦吧 🌙"); return; }
+  if (quota <= 0) { document.getElementById("subModal").classList.add("show"); return; }
+
+  quota--; renderQuota();
+
+  const title = generateTitle(text);
+  const img = generateDreamImage(text, title);
+  const reading = generateReading(text);
+
+  document.getElementById("dreamFrame").innerHTML =
+    `<img src="${img}" alt="梦境图像"><div class="dream-title">${title}</div>`;
+  document.getElementById("reading").innerHTML =
+    `<h3>🔮 梦境解读</h3>` + reading.map(p => `<p>${p}</p>`).join("") +
+    `<div class="disclaimer">⚠️ 以上解读由算法生成，仅供娱乐与灵感参考，不构成心理、医学或其他专业建议。</div>`;
+  document.getElementById("result").classList.add("show");
+  document.getElementById("result").scrollIntoView({ behavior: "smooth" });
+
+  const list = loadGallery();
+  list.push({ id: Date.now().toString(36), title, text, img, reading, date: new Date().toLocaleString("zh-CN", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }) });
+  saveGallery(list);
+  renderGallery();
+}
+
+window.delDream = id => {
+  saveGallery(loadGallery().filter(d => d.id !== id));
+  renderGallery();
+};
+window.viewDream = id => {
+  const d = loadGallery().find(x => x.id === id);
+  if (!d) return;
+  document.getElementById("dreamFrame").innerHTML =
+    `<img src="${d.img}" alt="${d.title}"><div class="dream-title">${d.title}</div>`;
+  document.getElementById("reading").innerHTML =
+    `<h3>🔮 梦境解读</h3>` + d.reading.map(p => `<p>${p}</p>`).join("") +
+    `<div class="disclaimer">⚠️ 解读仅供娱乐，不构成专业建议。</div>`;
+  document.getElementById("result").classList.add("show");
+  document.getElementById("result").scrollIntoView({ behavior: "smooth" });
+};
+
+document.getElementById("genBtn").onclick = () => handleGenerate(document.getElementById("dreamInput").value);
+
+const RANDOM_DREAMS = [
+  "我梦见自己在一列没有尽头的火车上，窗外是倒着下落的瀑布，对面坐着小时候的自己。",
+  "梦见整座城市的楼都变成了软糖做的，我走路就能弹跳起飞，云里有一只巨大的猫在睡觉。",
+  "我梦到水下有一座图书馆，书都会发光，一条鲸鱼驮着我在书架之间游。",
+  "梦见高考迟到，但考场在月球上，监考老师是三只眼睛的月亮。",
+  "梦到去世的外公在厨房做饭，窗外下着黑色的雪，他说的话我全听懂了。"
+];
+document.getElementById("randomBtn").onclick = () => {
+  document.getElementById("dreamInput").value = RANDOM_DREAMS[Math.floor(Math.random() * RANDOM_DREAMS.length)];
+};
+
+const voiceBtn = document.getElementById("voiceBtn");
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!SR) voiceBtn.title = "当前浏览器不支持语音识别，请用 Chrome/Edge";
+let rec = null;
+voiceBtn.onclick = () => {
+  if (!SR) { alert("当前浏览器不支持语音识别，请使用 Chrome 或 Edge（需 HTTPS 或 localhost）"); return; }
+  if (rec) { rec.stop(); return; }
+  rec = new SR();
+  rec.lang = "zh-CN"; rec.interimResults = false;
+  voiceBtn.classList.add("recording");
+  voiceBtn.textContent = "🎙️ 正在聆听…（点击停止）";
+  rec.onresult = e => {
+    const t = e.results[0][0].transcript;
+    document.getElementById("dreamInput").value = (document.getElementById("dreamInput").value + " " + t).trim();
+  };
+  rec.onend = rec.onerror = () => {
+    rec = null;
+    voiceBtn.classList.remove("recording");
+    voiceBtn.textContent = "🎙️ 语音描述";
+  };
+  rec.start();
+};
+
+document.getElementById("quotaPill").onclick = () => document.getElementById("subModal").classList.add("show");
+document.getElementById("subClose").onclick = () => document.getElementById("subModal").classList.remove("show");
+document.getElementById("subBtn").onclick = () => {
+  quota = 3; renderQuota();
+  document.getElementById("subModal").classList.remove("show");
+  alert("感谢订阅（演示）！额度已恢复 🌌");
+};
+
+(function() {
+  const box = document.getElementById("stars");
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement("div");
+    s.className = "star";
+    s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;width:${Math.random()*2+1}px;height:${Math.random()*2+1}px;animation-delay:${Math.random()*3}s`;
+    box.appendChild(s);
+  }
+})();
+
+renderQuota();
+renderGallery();
+</script>
+</body>
+</html>
