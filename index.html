@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="记录你的梦，生成超现实梦境图像与解读，积累专属梦境图鉴。数据只保存在你自己的浏览器里。">
+<meta name="theme-color" content="#0d0b1e">
+<meta property="og:title" content="梦境日记 · AI Dream Journal">
+<meta property="og:description" content="说出你的梦 · 生成超现实图景与解读 · 积累专属梦境图鉴">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%99%3C/text%3E%3C/svg%3E">
 <title>梦境日记 · AI Dream Journal</title>
 <style>
   :root {
@@ -99,7 +105,41 @@
     border-top: 1px dashed #3b2f6b; padding-top: 12px;
   }
 
+  .dream-text {
+    margin-top: 14px; border-top: 1px dashed #3b2f6b; padding-top: 12px;
+    font-size: 13.5px; color: var(--muted); line-height: 1.9; white-space: pre-wrap;
+  }
+  .dream-text b { color: #bfb3ec; font-weight: 600; letter-spacing: 1px; }
+
+  .stats { margin-bottom: 40px; }
+  .stats h2 { font-size: 20px; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+  .tile-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 560px) { .tile-row { grid-template-columns: 1fr; } }
+  .tile {
+    background: var(--card); border: 1px solid #322a5e; border-radius: 14px; padding: 16px 18px;
+  }
+  .tile .t-label { font-size: 12.5px; color: var(--muted); letter-spacing: .5px; }
+  .tile .t-value { font-size: 30px; font-weight: 600; margin-top: 6px; line-height: 1.1; }
+  .tile .t-unit { font-size: 14px; font-weight: 400; color: var(--muted); margin-left: 3px; }
+  .tile .t-sub { font-size: 12px; color: #6f6699; margin-top: 5px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--card2); border: 1px solid #3b2f6b; border-radius: 999px;
+    padding: 5px 13px; font-size: 12.5px; color: #d8d0f5;
+  }
+  .chip .c-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--purple); flex: none; }
+  .chip .c-n { color: var(--muted); font-variant-numeric: tabular-nums; }
+
   .gallery h2 { font-size: 20px; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+  .search-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .search-row input {
+    flex: 1; background: #120e26; color: var(--text); border: 1px solid #3b2f6b;
+    border-radius: 10px; padding: 10px 14px; font-size: 14px; outline: none;
+    font-family: inherit; transition: .2s;
+  }
+  .search-row input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(139,92,246,.15); }
   .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
   .g-card {
     background: var(--card2); border: 1px solid #322a5e; border-radius: 14px;
@@ -110,12 +150,14 @@
   .g-card .g-body { padding: 10px 12px; }
   .g-card .g-title { font-size: 13.5px; font-weight: 600; }
   .g-card .g-date { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
-  .g-del {
-    position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%;
-    background: rgba(0,0,0,.55); color: #fda4af; font-size: 14px; line-height: 26px;
-    text-align: center; padding: 0; display: none;
+  .g-actions { position: absolute; top: 8px; right: 8px; display: flex; gap: 6px; opacity: 0; transition: opacity .15s; }
+  .g-card:hover .g-actions, .g-card:focus-within .g-actions { opacity: 1; }
+  .g-actions button {
+    width: 26px; height: 26px; border-radius: 50%; padding: 0;
+    background: rgba(0,0,0,.6); font-size: 13px; line-height: 26px; text-align: center;
   }
-  .g-card:hover .g-del { display: block; }
+  .g-del { color: #fda4af; }
+  .g-dl { color: #a5e8c0; }
   .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 40px 0; grid-column: 1/-1; }
 
   .modal-mask {
@@ -131,6 +173,28 @@
   .modal h3 { margin-bottom: 12px; font-size: 20px; }
   .modal p { color: var(--muted); font-size: 14px; line-height: 1.9; margin-bottom: 22px; }
   footer { text-align: center; color: #5d548c; font-size: 12px; margin-top: 60px; letter-spacing: 1px; }
+
+  :focus-visible { outline: 2px solid #c4b5fd; outline-offset: 2px; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  .toast-wrap {
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: 28px; z-index: 60;
+    display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none;
+  }
+  .toast {
+    background: #241d47; border: 1px solid #4a3d85; color: var(--text);
+    border-radius: 999px; padding: 11px 22px; font-size: 14px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.5); animation: toastIn .25s ease;
+  }
+  .toast.err { border-color: #b4485f; color: #ffd7de; }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(12px); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    html { scroll-behavior: auto; }
+  }
 </style>
 </head>
 <body>
@@ -142,12 +206,12 @@
     <h1>梦境日记</h1>
     <div class="subtitle">说出你的梦 · 生成超现实图景与解读 · 积累专属梦境图鉴</div>
     <div class="quota-bar">
-      <span class="quota-pill" id="quotaPill" title="点击了解订阅">今晚剩余额度：<b id="quotaNum">3</b> 次</span>
+      <button class="quota-pill" id="quotaPill" title="点击了解订阅"></button>
     </div>
   </header>
 
   <div class="input-card">
-    <h2>✍️ 记录昨晚的梦</h2>
+    <h2><label for="dreamInput">✍️ 记录昨晚的梦</label></h2>
     <textarea id="dreamInput" placeholder="例如：我梦见自己在一片紫色的海里游泳，天上挂着三个月亮，还有鲸鱼在云朵之间游来游去……"></textarea>
     <div class="btn-row">
       <button class="btn-primary" id="genBtn">✨ 生成梦境图像与解读</button>
@@ -156,15 +220,26 @@
     </div>
   </div>
 
-  <div class="result" id="result">
+  <div class="result" id="result" aria-live="polite">
     <div class="result-grid">
       <div class="dream-frame" id="dreamFrame"></div>
       <div class="reading" id="reading"></div>
     </div>
   </div>
 
+  <section class="stats" id="stats" hidden>
+    <h2>📊 梦境连续性分析</h2>
+    <div class="tile-row" id="tileRow"></div>
+    <div class="chips" id="chipRow"></div>
+  </section>
+
   <div class="gallery">
     <h2>📖 我的梦境图鉴 <span id="galleryCount" style="font-size:13px;color:var(--muted)"></span></h2>
+    <div class="search-row">
+      <label class="sr-only" for="searchInput">搜索梦境</label>
+      <input id="searchInput" type="search" placeholder="搜索标题或梦境原文，例如「鲸鱼」">
+      <button class="btn-ghost" id="exportAllBtn" title="导出全部梦境为 JSON 备份">⬇️ 备份</button>
+    </div>
     <div class="gallery-grid" id="galleryGrid"></div>
   </div>
 
@@ -172,13 +247,15 @@
 </div>
 
 <div class="modal-mask" id="subModal">
-  <div class="modal">
-    <h3>🌌 今晚的额度用完了</h3>
-    <p>订阅「梦境无限版」¥12/月，不限次数生成，解锁高清梦境图与梦境连续性分析。<br><br><small>（Demo：点击下面按钮即可恢复 3 次额度）</small></p>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="subTitle">
+    <h3 id="subTitle">🌌 今晚的额度用完了</h3>
+    <p id="subDesc"></p>
     <button class="btn-primary" id="subBtn">✨ 立即订阅（演示）</button>
     <button class="btn-ghost" style="margin-left:10px" id="subClose">再想想</button>
   </div>
 </div>
+
+<div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
 
 <script>
 function hashStr(s) {
@@ -230,7 +307,7 @@ function generateDreamImage(text, title) {
   const main2 = SYMBOLS[Math.floor(rnd() * SYMBOLS.length)];
 
   const svg = `
-  <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="${pal[0]}"/>
@@ -295,73 +372,204 @@ function generateTitle(text) {
   return pool.map(arr => arr[Math.floor(rnd() * arr.length)]).join("");
 }
 
-let quota = parseInt(localStorage.getItem("dream_quota") ?? "3");
-function renderQuota() {
-  document.getElementById("quotaNum").textContent = quota;
-  localStorage.setItem("dream_quota", quota);
+const DAILY_QUOTA = 3;
+const MAX_DREAMS = 60;
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
-function loadGallery() { try { return JSON.parse(localStorage.getItem("dream_gallery") || "[]"); } catch { return []; } }
-function saveGallery(list) { localStorage.setItem("dream_gallery", JSON.stringify(list)); }
+function toast(msg, isErr) {
+  const el = document.createElement("div");
+  el.className = "toast" + (isErr ? " err" : "");
+  el.textContent = msg;
+  document.getElementById("toastWrap").appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+// localStorage can be unavailable (private mode, blocked site data) or full.
+function lsGet(k, fallback) {
+  try { const v = localStorage.getItem(k); return v === null ? fallback : v; } catch { return fallback; }
+}
+function lsSet(k, v) {
+  try { localStorage.setItem(k, v); return true; } catch { return false; }
+}
+
+// "Tonight's quota" only means something if it actually resets each day.
+function today() { return new Date().toLocaleDateString("sv"); } // YYYY-MM-DD, locale-stable
+let isPro = lsGet("dream_pro", "0") === "1";
+let quotaDay = lsGet("dream_quota_day", "");
+let quota = parseInt(lsGet("dream_quota", String(DAILY_QUOTA)), 10);
+if (!Number.isFinite(quota)) quota = DAILY_QUOTA;
+if (quotaDay !== today()) { quota = DAILY_QUOTA; quotaDay = today(); }
+
+function renderQuota() {
+  const pill = document.getElementById("quotaPill");
+  pill.innerHTML = isPro
+    ? `梦境无限版 · <b>不限次数</b>`
+    : `今晚剩余额度：<b>${quota}</b> 次`;
+  lsSet("dream_quota", String(quota));
+  lsSet("dream_quota_day", quotaDay);
+  lsSet("dream_pro", isPro ? "1" : "0");
+}
+
+function loadGallery() { try { return JSON.parse(lsGet("dream_gallery", "[]")); } catch { return []; } }
+
+// Each dream's SVG data URI is ~4-8KB, so the 5MB budget runs out silently.
+// Drop the oldest entries until the write lands, and say so instead of failing quietly.
+function saveGallery(list) {
+  let work = list.slice(-MAX_DREAMS);
+  while (work.length) {
+    if (lsSet("dream_gallery", JSON.stringify(work))) {
+      if (work.length < list.length) toast(`存储空间已满，已移除最早的 ${list.length - work.length} 场梦`, true);
+      return work;
+    }
+    work = work.slice(Math.max(1, Math.ceil(work.length * 0.2)));
+  }
+  toast("浏览器存储不可用，本次梦境无法保存", true);
+  return list;
+}
+
+let searchTerm = "";
 
 function renderGallery() {
-  const list = loadGallery();
+  const all = loadGallery();
   const grid = document.getElementById("galleryGrid");
-  document.getElementById("galleryCount").textContent = list.length ? `共 ${list.length} 场梦` : "";
-  if (!list.length) {
+  const q = searchTerm.trim().toLowerCase();
+  const list = q
+    ? all.filter(d => (d.title + " " + (d.text || "")).toLowerCase().includes(q))
+    : all;
+
+  document.getElementById("galleryCount").textContent =
+    all.length ? (q ? `${list.length} / ${all.length} 场梦` : `共 ${all.length} 场梦`) : "";
+
+  if (!all.length) {
     grid.innerHTML = `<div class="empty">还没有梦境记录。<br>写下或说出你的第一个梦吧 🌙</div>`;
     return;
   }
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty">没有匹配「${esc(searchTerm)}」的梦境。</div>`;
+    return;
+  }
+
   grid.innerHTML = list.map(d => `
-    <div class="g-card" data-id="${d.id}" onclick="viewDream('${d.id}')">
-      <button class="g-del" onclick="event.stopPropagation();delDream('${d.id}')">✕</button>
-      <img src="${d.img}" alt="${d.title}">
-      <div class="g-body">
-        <div class="g-title">${d.title}</div>
-        <div class="g-date">${d.date}</div>
+    <div class="g-card">
+      <div class="g-actions">
+        <button class="g-dl" data-act="dl" data-id="${esc(d.id)}" title="下载这张梦境图" aria-label="下载「${esc(d.title)}」">⬇</button>
+        <button class="g-del" data-act="del" data-id="${esc(d.id)}" title="删除这场梦" aria-label="删除「${esc(d.title)}」">✕</button>
       </div>
+      <button class="g-open" data-act="open" data-id="${esc(d.id)}" style="all:unset;cursor:pointer;display:block;width:100%">
+        <img src="${esc(d.img)}" alt="梦境图像：${esc(d.title)}">
+        <div class="g-body">
+          <div class="g-title">${esc(d.title)}</div>
+          <div class="g-date">${esc(d.date)}</div>
+        </div>
+      </button>
     </div>`).reverse().join("");
+}
+
+document.getElementById("galleryGrid").addEventListener("click", e => {
+  const btn = e.target.closest("[data-act]");
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (btn.dataset.act === "del") delDream(id);
+  else if (btn.dataset.act === "dl") downloadDream(id);
+  else viewDream(id);
+});
+
+document.getElementById("searchInput").addEventListener("input", e => {
+  searchTerm = e.target.value;
+  renderGallery();
+});
+
+function showDream(d) {
+  document.getElementById("dreamFrame").innerHTML =
+    `<img src="${esc(d.img)}" alt="梦境图像：${esc(d.title)}"><div class="dream-title">${esc(d.title)}</div>`;
+  document.getElementById("reading").innerHTML =
+    `<h3>🔮 梦境解读</h3>` +
+    d.reading.map(p => `<p>${esc(p)}</p>`).join("") +
+    (d.text ? `<div class="dream-text"><b>梦境原文</b>\n${esc(d.text)}</div>` : "") +
+    `<div class="disclaimer">⚠️ 以上解读由算法生成，仅供娱乐与灵感参考，不构成心理、医学或其他专业建议。</div>`;
+  const r = document.getElementById("result");
+  r.classList.add("show");
+  r.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function handleGenerate(rawText) {
   const text = rawText.trim();
-  if (!text) { alert("先描述一下你的梦吧 🌙"); return; }
-  if (quota <= 0) { document.getElementById("subModal").classList.add("show"); return; }
+  if (!text) { toast("先描述一下你的梦吧 🌙"); document.getElementById("dreamInput").focus(); return; }
+  if (!isPro && quota <= 0) { openModal(); return; }
 
-  quota--; renderQuota();
+  if (!isPro) { quota--; renderQuota(); }
 
   const title = generateTitle(text);
-  const img = generateDreamImage(text, title);
-  const reading = generateReading(text);
+  const dream = {
+    id: Date.now().toString(36),
+    title,
+    text,
+    img: generateDreamImage(text, title),
+    reading: generateReading(text),
+    ts: Date.now(),
+    date: new Date().toLocaleString("zh-CN", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })
+  };
 
-  document.getElementById("dreamFrame").innerHTML =
-    `<img src="${img}" alt="梦境图像"><div class="dream-title">${title}</div>`;
-  document.getElementById("reading").innerHTML =
-    `<h3>🔮 梦境解读</h3>` + reading.map(p => `<p>${p}</p>`).join("") +
-    `<div class="disclaimer">⚠️ 以上解读由算法生成，仅供娱乐与灵感参考，不构成心理、医学或其他专业建议。</div>`;
-  document.getElementById("result").classList.add("show");
-  document.getElementById("result").scrollIntoView({ behavior: "smooth" });
-
-  const list = loadGallery();
-  list.push({ id: Date.now().toString(36), title, text, img, reading, date: new Date().toLocaleString("zh-CN", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }) });
-  saveGallery(list);
+  showDream(dream);
+  saveGallery(loadGallery().concat(dream));
   renderGallery();
+  renderStats();
 }
 
-window.delDream = id => {
-  saveGallery(loadGallery().filter(d => d.id !== id));
-  renderGallery();
-};
-window.viewDream = id => {
+function delDream(id) {
   const d = loadGallery().find(x => x.id === id);
   if (!d) return;
-  document.getElementById("dreamFrame").innerHTML =
-    `<img src="${d.img}" alt="${d.title}"><div class="dream-title">${d.title}</div>`;
-  document.getElementById("reading").innerHTML =
-    `<h3>🔮 梦境解读</h3>` + d.reading.map(p => `<p>${p}</p>`).join("") +
-    `<div class="disclaimer">⚠️ 解读仅供娱乐，不构成专业建议。</div>`;
-  document.getElementById("result").classList.add("show");
-  document.getElementById("result").scrollIntoView({ behavior: "smooth" });
+  if (!confirm(`删除「${d.title}」？此操作无法撤销。`)) return;
+  saveGallery(loadGallery().filter(x => x.id !== id));
+  renderGallery();
+  renderStats();
+  toast("已删除这场梦");
+}
+
+function viewDream(id) {
+  const d = loadGallery().find(x => x.id === id);
+  if (d) showDream(d);
+}
+
+// SVG data URI -> PNG via canvas, so the saved file opens anywhere.
+function downloadDream(id) {
+  const d = loadGallery().find(x => x.id === id);
+  if (!d) return;
+  const img = new Image();
+  img.onload = () => {
+    const cv = document.createElement("canvas");
+    cv.width = img.naturalWidth || 800;
+    cv.height = img.naturalHeight || 1000;
+    cv.getContext("2d").drawImage(img, 0, 0);
+    cv.toBlob(blob => {
+      if (!blob) { toast("导出失败，请重试", true); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `梦境-${d.title}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast("已保存梦境图 🌙");
+    }, "image/png");
+  };
+  img.onerror = () => toast("导出失败，请重试", true);
+  img.src = d.img;
+}
+
+document.getElementById("exportAllBtn").onclick = () => {
+  const list = loadGallery();
+  if (!list.length) { toast("还没有梦境可以备份"); return; }
+  const blob = new Blob([JSON.stringify(list, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `梦境日记备份-${today()}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast(`已备份 ${list.length} 场梦`);
 };
 
 document.getElementById("genBtn").onclick = () => handleGenerate(document.getElementById("dreamInput").value);
@@ -377,12 +585,73 @@ document.getElementById("randomBtn").onclick = () => {
   document.getElementById("dreamInput").value = RANDOM_DREAMS[Math.floor(Math.random() * RANDOM_DREAMS.length)];
 };
 
+// 「梦境连续性分析」— three headline numbers, then recurring imagery as chips.
+// Stat tiles rather than charts: these are single current values, not trends.
+const IMAGERY = [
+  ["水域", ["水","海","河","雨","游","湖","浪","潮"]],
+  ["飞行", ["飞","飘","翅膀","云","空中"]],
+  ["坠落", ["坠","掉","悬崖","跌"]],
+  ["追逐", ["追","跑","逃","躲"]],
+  ["火焰", ["火","烧","焰","烟"]],
+  ["动物", ["蛇","狗","猫","鲸","鸟","鱼","虫"]],
+  ["天体", ["月","星","太阳","宇宙","行星"]],
+  ["旧识", ["外公","外婆","爷爷","奶奶","前任","旧友","小时候","童年"]],
+  ["考试与工作", ["考试","迟到","上班","工作","上课","开会"]],
+  ["建筑", ["房","楼","门","楼梯","城市","图书馆","车站"]],
+];
+
+function countStreak(dates) {
+  // Consecutive days ending today or yesterday.
+  const set = new Set(dates);
+  const d = new Date();
+  if (!set.has(d.toLocaleDateString("sv"))) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (set.has(d.toLocaleDateString("sv"))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+
+function renderStats() {
+  const list = loadGallery();
+  const section = document.getElementById("stats");
+  if (list.length < 2) { section.hidden = true; return; }
+  section.hidden = false;
+
+  const days = list.map(d => new Date(d.ts || Date.now()).toLocaleDateString("sv"));
+  const uniqueDays = new Set(days).size;
+  const streak = countStreak(days);
+
+  const tiles = [
+    { label: "记录的梦", value: list.length, unit: "场", sub: `横跨 ${uniqueDays} 天` },
+    { label: "连续记录", value: streak, unit: "天", sub: streak >= 3 ? "保持得不错 🌙" : "连续记录更容易看出规律" },
+    { label: "平均每天", value: (list.length / uniqueDays).toFixed(1), unit: "场", sub: "梦多的时期往往压力也大" },
+  ];
+  document.getElementById("tileRow").innerHTML = tiles.map(t => `
+    <div class="tile">
+      <div class="t-label">${esc(t.label)}</div>
+      <div class="t-value">${esc(t.value)}<span class="t-unit">${esc(t.unit)}</span></div>
+      <div class="t-sub">${esc(t.sub)}</div>
+    </div>`).join("");
+
+  const corpus = list.map(d => d.text || "");
+  const freq = IMAGERY
+    .map(([name, keys]) => [name, corpus.filter(t => keys.some(k => t.includes(k))).length])
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
+
+  document.getElementById("chipRow").innerHTML = freq.length
+    ? `<span class="chip" style="border-style:dashed;color:var(--muted)">反复出现的意象</span>` +
+      freq.map(([name, n]) => `
+        <span class="chip"><span class="c-dot"></span>${esc(name)}<span class="c-n">${n} 次</span></span>`).join("")
+    : `<span class="chip" style="color:var(--muted)">还没有识别出反复出现的意象</span>`;
+}
+
 const voiceBtn = document.getElementById("voiceBtn");
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 if (!SR) voiceBtn.title = "当前浏览器不支持语音识别，请用 Chrome/Edge";
 let rec = null;
 voiceBtn.onclick = () => {
-  if (!SR) { alert("当前浏览器不支持语音识别，请使用 Chrome 或 Edge（需 HTTPS 或 localhost）"); return; }
+  if (!SR) { toast("当前浏览器不支持语音识别，请使用 Chrome 或 Edge（需 HTTPS 或 localhost）", true); return; }
   if (rec) { rec.stop(); return; }
   rec = new SR();
   rec.lang = "zh-CN"; rec.interimResults = false;
@@ -400,13 +669,45 @@ voiceBtn.onclick = () => {
   rec.start();
 };
 
-document.getElementById("quotaPill").onclick = () => document.getElementById("subModal").classList.add("show");
-document.getElementById("subClose").onclick = () => document.getElementById("subModal").classList.remove("show");
+const modal = document.getElementById("subModal");
+let lastFocus = null;
+
+function openModal() {
+  document.getElementById("subTitle").textContent = isPro ? "🌌 梦境无限版已开启" : "🌌 今晚的额度用完了";
+  document.getElementById("subDesc").innerHTML = isPro
+    ? `你当前是「梦境无限版」，生成不限次数。<br><br><small>（Demo：点击下面按钮可退订，恢复每天 ${DAILY_QUOTA} 次）</small>`
+    : `订阅「梦境无限版」¥12/月，不限次数生成，解锁高清梦境图与梦境连续性分析。<br><br><small>（Demo：本页是纯前端演示，不会真的扣款，也不会上传任何数据）</small>`;
+  document.getElementById("subBtn").textContent = isPro ? "退订（演示）" : "✨ 立即订阅（演示）";
+  lastFocus = document.activeElement;
+  modal.classList.add("show");
+  document.getElementById("subBtn").focus();
+}
+function closeModal() {
+  modal.classList.remove("show");
+  if (lastFocus) lastFocus.focus();
+}
+
+document.getElementById("quotaPill").onclick = openModal;
+document.getElementById("subClose").onclick = closeModal;
+modal.onclick = e => { if (e.target === modal) closeModal(); };
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && modal.classList.contains("show")) closeModal();
+});
 document.getElementById("subBtn").onclick = () => {
-  quota = 3; renderQuota();
-  document.getElementById("subModal").classList.remove("show");
-  alert("感谢订阅（演示）！额度已恢复 🌌");
+  isPro = !isPro;
+  if (!isPro) { quota = DAILY_QUOTA; quotaDay = today(); }
+  renderQuota();
+  closeModal();
+  toast(isPro ? "感谢订阅（演示）！现在不限次数 🌌" : `已退订，恢复每天 ${DAILY_QUOTA} 次`);
 };
+
+// Ctrl/Cmd+Enter generates from the textarea.
+document.getElementById("dreamInput").addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+    e.preventDefault();
+    handleGenerate(e.target.value);
+  }
+});
 
 (function() {
   const box = document.getElementById("stars");
@@ -420,6 +721,7 @@ document.getElementById("subBtn").onclick = () => {
 
 renderQuota();
 renderGallery();
+renderStats();
 </script>
 </body>
 </html>
